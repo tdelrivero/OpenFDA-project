@@ -1,0 +1,140 @@
+---
+title: "FDA 5"
+format: html
+editor: visual
+---
+
+```{r}
+library("openFDA")
+library("ggplot2")
+library("magrittr")
+library("tidyverse")
+library("httr2")
+library("devtools")
+
+```
+
+```{r}
+api_key <- "xlQEdZAvI0DaQOo4TDpkNRRSwz4krUgzLZ2FsLts"
+set_api_key(api_key)
+```
+
+```{r}
+antiinflammatories_refined <- openFDA(
+  search = "openfda.pharm_class_epc:\"Nonsteroidal Anti-inflammatory Drug\"",
+  endpoint = "drug-drugsfda"
+)
+httr2::resp_body_json(antiinflammatories_refined)$meta$results$total
+```
+
+```{r}
+antiinflammatories_ref_nest <- httr2::resp_body_json(antiinflammatories_refined)
+```
+
+```{r}
+application_numbers <- purrr::map_chr(
+  .x = antiinflammatories_ref_nest$results, 
+  .f = \(result) purrr::pluck(result, "openfda", "application_number", 1)
+)
+```
+
+```{r}
+sponsor_name <- purrr::map_chr(
+  .x = antiinflammatories_ref_nest$results, 
+  .f = \(result) purrr::pluck(result, "sponsor_name", 1)
+)
+```
+
+```{r}
+generic_name <- purrr::map_chr(
+  .x = antiinflammatories_ref_nest$results, 
+  .f = \(result) purrr::pluck(result, "openfda", "generic_name", 1)
+)
+```
+
+```{r}
+antiinflammatories_df <- data.frame(application_numbers, sponsor_name, generic_name)
+```
+
+```{r}
+rm(antiinflammatories)
+rm(antiinflammatories_nested)
+rm(antiinflammatories_nested2)
+rm(antiinflammatories2)
+```
+
+```{r}
+write.csv(x = antiinflammatories_df, file = "outputs/antiinflammatories-data.csv", row.names = FALSE)
+```
+
+```{r}
+antiinflammatories_by_date <- openFDA(
+  search = "openfda.pharm_class_epc:\"Nonsteroidal Anti-inflammatory Drug\"",
+  sort = "submissions.submission_status_date:desc",
+  endpoint = "drug-drugsfda"
+)
+```
+
+```{r}
+antiinflammatories_by_date_nested <- httr2::resp_body_json(antiinflammatories_by_date)
+```
+
+```{r}
+ggplot(data = antiinflammatories_df, mapping = aes(sponsor_name)) + 
+  geom_bar() +
+ labs(
+    title = "Nonsteroidal Anti-inflammatory Drugs",     
+  ) +
+  theme(text = element_text(size=5),
+axis.text.x = element_text(angle = 90, hjust = 0.5))
+
+```
+
+```{r}
+nsaidsponsors <- ggplot(data = antiinflammatories_df, mapping = aes(sponsor_name)) + 
+  geom_bar() +
+ labs(
+    title = "Nonsteroidal Anti-inflammatory Drugs",     
+  ) +
+  theme(text = element_text(size=5),
+axis.text.x = element_text(angle = 90, hjust = 0.5))
+```
+
+```{r}
+ggsave("nsaidsponsors.pdf")
+```
+
+```{r}
+ggplot(data = antiinflammatories_df, mapping = aes(generic_name)) + 
+  geom_bar() +
+ labs(
+    title = "Nonsteroidal Anti-inflammatory Drugs",     
+  ) +
+  theme(text = element_text(size=5),
+axis.text.x = element_text(angle = 90, hjust = 0.5))
+```
+
+```{r}
+ggsave("nsaidgenericnames.pdf")
+```
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
